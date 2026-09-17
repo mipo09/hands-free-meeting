@@ -1,3 +1,0 @@
-↓仮想環境を有効にするコード↓
-.venv\Scripts\activate
-
