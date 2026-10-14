@@ -1,89 +1,33 @@
+
 import cv2
 import mediapipe as mp
+import easyocr
+import json
+import time
+import math
+from pathlib import Path
+from datetime import datetime
+
 
 # =========================
-# 指さし判定
+# 基本設定
 # =========================
 
-def is_pointing(hand):
+BASE_DIR = Path(__file__).resolve().parent
+MODEL_PATH = BASE_DIR / "hand_landmarker.task"
+OUTPUT_PATH = BASE_DIR / "events.json"
 
-    # 人差し指
-    index_tip = hand[8]
-    index_pip = hand[6]
-    index_mcp = hand[5]
+POINTING_SECONDS = 1.0
+STABLE_DISTANCE = 35
+OCR_MARGIN = 100
 
-    # 中指
-    middle_tip = hand[12]
-    middle_pip = hand[10]
-    middle_mcp = hand[9]
+WINDOW_NAME = "Meeting Camera"
 
-    # 薬指
-    ring_tip = hand[16]
-    ring_pip = hand[14]
-    ring_mcp = hand[13]
-
-    # 小指
-    pinky_tip = hand[20]
-    pinky_pip = hand[18]
-    pinky_mcp = hand[17]
-
-    # 2点間の距離
-    def distance(a, b):
-        return (
-            (a.x - b.x) ** 2 +
-            (a.y - b.y) ** 2
-        ) ** 0.5
-
-    # 指が伸びているか
-    def is_extended(tip, pip, mcp):
-        return distance(tip, mcp) > distance(pip, mcp) * 1.5
-
-    index_extended = is_extended(
-        index_tip, index_pip, index_mcp
-    )
-
-    middle_extended = is_extended(
-        middle_tip, middle_pip, middle_mcp
-    )
-
-    ring_extended = is_extended(
-        ring_tip, ring_pip, ring_mcp
-    )
-
-    pinky_extended = is_extended(
-        pinky_tip, pinky_pip, pinky_mcp
-    )
-
-    return (
-        index_extended
-        and not middle_extended
-        and not ring_extended
-        and not pinky_extended
-    )
-
-# =========================
-# MediaPipeの設定
-# =========================
-
+# MediaPipe
 BaseOptions = mp.tasks.BaseOptions
 HandLandmarker = mp.tasks.vision.HandLandmarker
 HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
 VisionRunningMode = mp.tasks.vision.RunningMode
-
-
-# 手の検出モデルを指定
-MODEL_PATH = "hand_landmarker.task"
-
-options = HandLandmarkerOptions(
-    base_options=BaseOptions(
-        model_asset_path=MODEL_PATH
-    ),
-    running_mode=VisionRunningMode.IMAGE,
-    num_hands=2,
-    min_hand_detection_confidence=0.5,
-    min_hand_presence_confidence=0.5,
-    min_tracking_confidence=0.5
-)
 
 
 # =========================
@@ -91,43 +35,31 @@ options = HandLandmarkerOptions(
 # =========================
 
 def select_camera():
+    available = []
 
-    available_cameras = []
+    print("カメラを検索しています...")
 
-    print("使用可能なカメラを検索しています...")
-
-    # カメラ番号0～9を確認
-    for camera_id in range(10):
-
-        cap = cv2.VideoCapture(
-            camera_id,
-            cv2.CAP_DSHOW
-        )
+    for camera_id in range(5):
+        cap = cv2.VideoCapture(camera_id, cv2.CAP_DSHOW)
 
         if cap.isOpened():
-
             ret, frame = cap.read()
 
             if ret:
-                available_cameras.append(camera_id)
-                print(f"{camera_id}：カメラ使用可能")
+                available.append(camera_id)
+                print(f"{camera_id}: 使用可能")
 
         cap.release()
 
-    if not available_cameras:
-        print("使用可能なカメラがありません。")
-        return None
+    if not available:
+        raise RuntimeError("カメラが見つかりません。")
 
-    # カメラを選択
     while True:
-
         try:
-            camera_id = int(
-                input("使用するカメラの番号を入力してください：")
-            )
+            selected = int(input("カメラ番号を入力: "))
 
-            if camera_id in available_cameras:
-                return camera_id
+            if selected in available:
+                return selected
 
             print("一覧にある番号を入力してください。")
 
@@ -136,137 +68,322 @@ def select_camera():
 
 
 # =========================
-# カメラ起動
+# 指さし判定
 # =========================
 
-camera_id = select_camera()
+def is_pointing(hand):
 
-if camera_id is None:
-    raise SystemExit("カメラが見つかりませんでした。")
+    def distance(a, b):
+        return math.hypot(a.x - b.x, a.y - b.y)
 
-camera = cv2.VideoCapture(
-    camera_id,
-    cv2.CAP_DSHOW
-)
+    def extended(tip, pip, mcp):
+        return distance(hand[tip], hand[mcp]) > (
+            distance(hand[pip], hand[mcp]) * 1.5
+        )
 
-if not camera.isOpened():
-    raise SystemExit("カメラを開けませんでした。")
-
-print(f"カメラ {camera_id} を使用します。")
+    return (
+        extended(8, 6, 5)
+        and not extended(12, 10, 9)
+        and not extended(16, 14, 13)
+        and not extended(20, 18, 17)
+    )
 
 
 # =========================
-# MediaPipe開始
+# ボードの範囲設定
 # =========================
 
-with HandLandmarker.create_from_options(options) as landmarker:
+def select_board(camera):
+
+    print("ホワイトボードの範囲を選択してください。")
+    print("マウスで囲んでEnter、キャンセルはCです。")
 
     while True:
-
         ret, frame = camera.read()
 
-        if not ret:
-            print("カメラから画像を取得できませんでした。")
+        if ret:
             break
 
-        # OpenCVのBGR → RGB
-        frame_rgb = cv2.cvtColor(
-            frame,
-            cv2.COLOR_BGR2RGB
+    roi = cv2.selectROI(
+        "Select Whiteboard",
+        frame,
+        fromCenter=False,
+        showCrosshair=True
+    )
+
+    cv2.destroyWindow("Select Whiteboard")
+
+    x, y, w, h = map(int, roi)
+
+    if w == 0 or h == 0:
+        raise RuntimeError("範囲が選択されませんでした。")
+
+    return (x, y, w, h)
+
+
+# =========================
+# OCR
+# =========================
+
+def recognize_text(reader, frame, point, board_roi):
+
+    px, py = point
+    bx, by, bw, bh = board_roi
+
+    # 指先周辺とボード領域の重なりを切り出す
+    x1 = max(bx, px - OCR_MARGIN)
+    y1 = max(by, py - OCR_MARGIN)
+
+    x2 = min(bx + bw, px + OCR_MARGIN)
+    y2 = min(by + bh, py + OCR_MARGIN)
+
+    if x1 >= x2 or y1 >= y2:
+        return ""
+
+    cropped = frame[y1:y2, x1:x2].copy()
+
+    results = reader.readtext(
+        cropped,
+        detail=0,
+        paragraph=False
+    )
+
+    return " ".join(results)
+
+
+# =========================
+# JSON保存
+# =========================
+
+def save_events(events):
+
+    with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
+        json.dump(
+            events,
+            f,
+            ensure_ascii=False,
+            indent=4
         )
 
-        # MediaPipe用画像
-        mp_image = mp.Image(
-            image_format=mp.ImageFormat.SRGB,
-            data=frame_rgb
+
+# =========================
+# メイン処理
+# =========================
+
+def main():
+
+    if not MODEL_PATH.exists():
+        raise FileNotFoundError(
+            f"モデルが見つかりません: {MODEL_PATH}"
         )
 
-        # 手を検出
-        result = landmarker.detect(mp_image)
+    camera_id = select_camera()
 
-        # =========================
-        # 検出結果を表示
-        # =========================
+    camera = cv2.VideoCapture(
+        camera_id,
+        cv2.CAP_DSHOW
+    )
 
-        if result.hand_landmarks:
+    if not camera.isOpened():
+        raise RuntimeError("カメラを起動できません。")
 
-            for hand_landmarks in result.hand_landmarks:
+    events = []
 
-                index_finger = hand_landmarks[8]
+    # OCRモデルの読み込み
+    print("OCRを準備しています...")
+    reader = easyocr.Reader(
+        ["ja", "en"],
+        gpu=False
+    )
 
-                height, width, _ = frame.shape
+    options = HandLandmarkerOptions(
+        base_options=BaseOptions(
+            model_asset_path=str(MODEL_PATH)
+        ),
+        running_mode=VisionRunningMode.IMAGE,
+        num_hands=2,
+        min_hand_detection_confidence=0.5,
+        min_hand_presence_confidence=0.5,
+        min_tracking_confidence=0.5
+    )
 
-                x = int(index_finger.x * width)
-                y = int(index_finger.y * height)
+    try:
+        board_roi = select_board(camera)
 
-                # 指さし判定
-                pointing = is_pointing(hand_landmarks)
+        # 録画・録音との連携時には共通の開始時刻に変更
+        start_time = time.monotonic()
 
-                if pointing:
+        stable_point = None
+        stable_start = None
+        already_recorded = False
 
-                    color = (0, 255, 0)
-                    status = "POINTING"
+        cv2.namedWindow(WINDOW_NAME)
+
+        with HandLandmarker.create_from_options(options) as landmarker:
+
+            while True:
+
+                ret, frame = camera.read()
+
+                if not ret:
+                    print("映像を取得できません。")
+                    break
+
+                # OCR用に描画前の画像を保持
+                clean_frame = frame.copy()
+
+                height, width = frame.shape[:2]
+
+                rgb = cv2.cvtColor(
+                    frame,
+                    cv2.COLOR_BGR2RGB
+                )
+
+                mp_image = mp.Image(
+                    image_format=mp.ImageFormat.SRGB,
+                    data=rgb
+                )
+
+                result = landmarker.detect(mp_image)
+
+                bx, by, bw, bh = board_roi
+
+                # ボード領域を表示
+                cv2.rectangle(
+                    frame,
+                    (bx, by),
+                    (bx + bw, by + bh),
+                    (255, 0, 0),
+                    2
+                )
+
+                # 最初は1つの指さし候補を追跡する
+                pointing_position = None
+
+                if result.hand_landmarks:
+
+                    for hand in result.hand_landmarks:
+
+                        if not is_pointing(hand):
+                            continue
+
+                        tip = hand[8]
+
+                        x = int(tip.x * width)
+                        y = int(tip.y * height)
+
+                        # 指先がボード内にあるか
+                        inside = (
+                            bx <= x <= bx + bw
+                            and by <= y <= by + bh
+                        )
+
+                        if inside:
+                            pointing_position = (x, y)
+                            break
+
+                if pointing_position is not None:
+
+                    x, y = pointing_position
+                    now = time.monotonic()
+
+                    cv2.circle(
+                        frame,
+                        (x, y),
+                        10,
+                        (0, 255, 0),
+                        -1
+                    )
+
+                    # 初めて指さしを検出
+                    if stable_point is None:
+                        stable_point = (x, y)
+                        stable_start = now
+                        already_recorded = False
+
+                    # 指先の移動距離
+                    movement = math.dist(
+                        stable_point,
+                        (x, y)
+                    )
+
+                    if movement > STABLE_DISTANCE:
+                        stable_point = (x, y)
+                        stable_start = now
+                        already_recorded = False
+
+                    elapsed = now - stable_start
+
+                    cv2.putText(
+                        frame,
+                        f"POINTING {elapsed:.1f}s",
+                        (20, 35),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.8,
+                        (0, 255, 0),
+                        2
+                    )
+
+                    # 一定時間安定したら記録
+                    if (
+                        elapsed >= POINTING_SECONDS
+                        and not already_recorded
+                    ):
+
+                        print("指さしを検出しました。OCR実行中...")
+
+                        recognized = recognize_text(
+                            reader,
+                            clean_frame,
+                            (x, y),
+                            board_roi
+                        )
+
+                        event = {
+                            "type": "pointing",
+                            "timestamp": round(
+                                now - start_time, 2
+                            ),
+                            "datetime": datetime.now().isoformat(
+                                timespec="seconds"
+                            ),
+                            "position": {
+                                "x": x,
+                                "y": y
+                            },
+                            "text": recognized
+                        }
+
+                        events.append(event)
+                        save_events(events)
+
+                        print("保存しました:", event)
+
+                        already_recorded = True
 
                 else:
+                    stable_point = None
+                    stable_start = None
+                    already_recorded = False
 
-                    color = (0, 0, 255)
-                    status = "HAND DETECTED"
+                cv2.imshow(WINDOW_NAME, frame)
 
-                # 指先に円を表示
-                cv2.circle(
-                    frame,
-                    (x, y),
-                    10,
-                    color,
-                    -1
-                )
+                key = cv2.waitKey(10) & 0xFF
 
-                # 判定結果を表示
-                cv2.putText(
-                    frame,
-                    status,
-                    (max(0, x - 50), max(25, y - 20)),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    color,
-                    2
-                )
+                if key in (ord("q"), ord("Q"), 27):
+                    print("終了します。")
+                    break
 
-                # 座標表示
-                cv2.putText(
-                    frame,
-                    f"({x}, {y})",
-                    (x + 10, y + 25),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    color,
-                    2
-                )
+                if cv2.getWindowProperty(
+                    WINDOW_NAME,
+                    cv2.WND_PROP_VISIBLE
+                ) < 1:
+                    break
 
-        # カメラ映像表示
-        cv2.imshow(
-            "Meeting Camera",
-            frame
-        )
-
-        key = cv2.waitKey(10) & 0xFF
-        
-        # Qキーで終了
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
-
-        # ウィンドウが閉じられた場合も終了
-        if cv2.getWindowProperty(
-            "Meeting Camera",
-            cv2.WND_PROP_VISIBLE
-        ) < 1:
-            print("ウィンドウが閉じられました。")
-            break
+    finally:
+        camera.release()
+        cv2.destroyAllWindows()
 
 
-# =========================
-# 終了処理
-# =========================
-
-camera.release()
-cv2.destroyAllWindows()
+if __name__ == "__main__":
+    main()
