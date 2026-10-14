@@ -1,6 +1,65 @@
 import cv2
 import mediapipe as mp
 
+# =========================
+# 指さし判定
+# =========================
+
+def is_pointing(hand):
+
+    # 人差し指
+    index_tip = hand[8]
+    index_pip = hand[6]
+    index_mcp = hand[5]
+
+    # 中指
+    middle_tip = hand[12]
+    middle_pip = hand[10]
+    middle_mcp = hand[9]
+
+    # 薬指
+    ring_tip = hand[16]
+    ring_pip = hand[14]
+    ring_mcp = hand[13]
+
+    # 小指
+    pinky_tip = hand[20]
+    pinky_pip = hand[18]
+    pinky_mcp = hand[17]
+
+    # 2点間の距離
+    def distance(a, b):
+        return (
+            (a.x - b.x) ** 2 +
+            (a.y - b.y) ** 2
+        ) ** 0.5
+
+    # 指が伸びているか
+    def is_extended(tip, pip, mcp):
+        return distance(tip, mcp) > distance(pip, mcp) * 1.5
+
+    index_extended = is_extended(
+        index_tip, index_pip, index_mcp
+    )
+
+    middle_extended = is_extended(
+        middle_tip, middle_pip, middle_mcp
+    )
+
+    ring_extended = is_extended(
+        ring_tip, ring_pip, ring_mcp
+    )
+
+    pinky_extended = is_extended(
+        pinky_tip, pinky_pip, pinky_mcp
+    )
+
+    return (
+        index_extended
+        and not middle_extended
+        and not ring_extended
+        and not pinky_extended
+    )
 
 # =========================
 # MediaPipeの設定
@@ -133,7 +192,6 @@ with HandLandmarker.create_from_options(options) as landmarker:
 
             for hand_landmarks in result.hand_landmarks:
 
-                # 人差し指の先端
                 index_finger = hand_landmarks[8]
 
                 height, width, _ = frame.shape
@@ -141,23 +199,47 @@ with HandLandmarker.create_from_options(options) as landmarker:
                 x = int(index_finger.x * width)
                 y = int(index_finger.y * height)
 
+                # 指さし判定
+                pointing = is_pointing(hand_landmarks)
+
+                if pointing:
+
+                    color = (0, 255, 0)
+                    status = "POINTING"
+
+                else:
+
+                    color = (0, 0, 255)
+                    status = "HAND DETECTED"
+
                 # 指先に円を表示
                 cv2.circle(
                     frame,
                     (x, y),
                     10,
-                    (0, 0, 255),
+                    color,
                     -1
+                )
+
+                # 判定結果を表示
+                cv2.putText(
+                    frame,
+                    status,
+                    (max(0, x - 50), max(25, y - 20)),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.6,
+                    color,
+                    2
                 )
 
                 # 座標表示
                 cv2.putText(
                     frame,
-                    f"Index: ({x}, {y})",
-                    (x + 10, y),
+                    f"({x}, {y})",
+                    (x + 10, y + 25),
                     cv2.FONT_HERSHEY_SIMPLEX,
-                    0.6,
-                    (0, 0, 255),
+                    0.5,
+                    color,
                     2
                 )
 
@@ -167,8 +249,18 @@ with HandLandmarker.create_from_options(options) as landmarker:
             frame
         )
 
+        key = cv2.waitKey(10) & 0xFF
+        
         # Qキーで終了
         if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+        # ウィンドウが閉じられた場合も終了
+        if cv2.getWindowProperty(
+            "Meeting Camera",
+            cv2.WND_PROP_VISIBLE
+        ) < 1:
+            print("ウィンドウが閉じられました。")
             break
 
 
