@@ -28,14 +28,72 @@ options = HandLandmarkerOptions(
 
 
 # =========================
+# カメラ選択
+# =========================
+
+def select_camera():
+
+    available_cameras = []
+
+    print("使用可能なカメラを検索しています...")
+
+    # カメラ番号0～9を確認
+    for camera_id in range(10):
+
+        cap = cv2.VideoCapture(
+            camera_id,
+            cv2.CAP_DSHOW
+        )
+
+        if cap.isOpened():
+
+            ret, frame = cap.read()
+
+            if ret:
+                available_cameras.append(camera_id)
+                print(f"{camera_id}：カメラ使用可能")
+
+        cap.release()
+
+    if not available_cameras:
+        print("使用可能なカメラがありません。")
+        return None
+
+    # カメラを選択
+    while True:
+
+        try:
+            camera_id = int(
+                input("使用するカメラの番号を入力してください：")
+            )
+
+            if camera_id in available_cameras:
+                return camera_id
+
+            print("一覧にある番号を入力してください。")
+
+        except ValueError:
+            print("数字を入力してください。")
+
+
+# =========================
 # カメラ起動
 # =========================
 
-camera = cv2.VideoCapture(1)
+camera_id = select_camera()
+
+if camera_id is None:
+    raise SystemExit("カメラが見つかりませんでした。")
+
+camera = cv2.VideoCapture(
+    camera_id,
+    cv2.CAP_DSHOW
+)
 
 if not camera.isOpened():
-    print("カメラを開けませんでした。")
-    exit()
+    raise SystemExit("カメラを開けませんでした。")
+
+print(f"カメラ {camera_id} を使用します。")
 
 
 # =========================
