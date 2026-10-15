@@ -210,7 +210,7 @@ def save_events(events):
 # メイン処理
 # =========================
 
-def main():
+def main(stop_event, meeting_dir, start_time):
 
     if not MODEL_PATH.exists():
         raise FileNotFoundError(
@@ -228,6 +228,8 @@ def main():
         raise RuntimeError("カメラを起動できません。")
 
     events = []
+    global OUTPUT_PATH
+    OUTPUT_PATH = meeting_dir / "events.json"
 
     # OCRモデルの読み込み
     print("OCRを準備しています...")
@@ -250,8 +252,6 @@ def main():
     try:
         board_roi = select_board(camera)
 
-        # 録画・録音との連携時には共通の開始時刻に変更
-        start_time = time.monotonic()
 
         stable_point = None
         stable_start = None
@@ -411,19 +411,22 @@ def main():
                 key = cv2.waitKey(10) & 0xFF
 
                 if key in (ord("q"), ord("Q"), 27):
-                    print("終了します。")
+                    print("カメラと録音を終了します。")
+                    stop_event.set()
                     break
 
                 if cv2.getWindowProperty(
                     WINDOW_NAME,
                     cv2.WND_PROP_VISIBLE
                 ) < 1:
+                    stop_event.set()
                     break
 
     finally:
+        stop_event.set()
         camera.release()
         cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
-    main()
+    print("main.pyから起動してください。")

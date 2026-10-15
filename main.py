@@ -5,6 +5,13 @@ import whisper
 import os
 import ollama
 
+import json
+import threading
+import time
+
+from pathlib import Path
+from camera_processor import main as camera_main
+
 
 samplerate = 16000
 channels = 1
@@ -77,10 +84,15 @@ theme = input(f"{purpose_name}のテーマを入力してください：")
 print("Enterキーを押すと録音を開始します。")
 input()
 
-print("録音中...")
-print("もう一度Enterキーを押すと録音を終了します。")
 
-# 録音中はスリープを防止
+print("録音・カメラ処理を開始します。")
+
+# カメラと録音の終了状態を共有
+stop_event = threading.Event()
+
+# 会議フォルダのパス
+meeting_path = Path(meeting_dir).resolve()
+
 prevent_sleep()
 
 try:
@@ -90,11 +102,19 @@ try:
         channels=channels,
         callback=callback
     ):
-        input()
+        # 録音開始時刻
+        start_time = time.monotonic()
+
+        # カメラ処理を開始
+        camera_main(
+            stop_event,
+            meeting_path,
+            start_time
+        )
 
 finally:
-    # 録音終了後は通常の状態に戻す
     allow_sleep()
+
 
 print("録音終了")
 
@@ -128,15 +148,38 @@ with open(transcript_path, "w", encoding="utf-8") as f:
     
 print(f"文字起こし結果を {transcript_path} に保存しました。")
 
-#＝＝＝要約＝＝＝
+
+# =========================
+# カメライベントの読み込み
+# =========================
+
+events_path = meeting_path / "events.json"
+
+if events_path.exists():
+
+    with open(
+        events_path,
+        "r",
+        encoding="utf-8"
+    ) as f:
+        events = json.load(f)
+
+else:
+    events = []
+
+
+# =========================
 # 会議データ
+# =========================
+
 meeting_data = {
     "purpose": purpose_name,
     "theme": theme,
     "transcript": result["text"],
-    "events": [],      # 今は空、後でカメラの検知結果を追加
+    "events": events,
     "participants": [],
 }
+
 
 #要約プロンプト
 prompt = f"""
