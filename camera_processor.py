@@ -121,8 +121,9 @@ def select_board(camera):
     return (x, y, w, h)
 
 
+
 # =========================
-# OCR
+# OCR（指先に近い文字を選択）
 # =========================
 
 def recognize_text(reader, frame, point, board_roi):
@@ -130,7 +131,7 @@ def recognize_text(reader, frame, point, board_roi):
     px, py = point
     bx, by, bw, bh = board_roi
 
-    # 指先周辺とボード領域の重なりを切り出す
+    # 指先周辺の範囲を取得
     x1 = max(bx, px - OCR_MARGIN)
     y1 = max(by, py - OCR_MARGIN)
 
@@ -142,13 +143,52 @@ def recognize_text(reader, frame, point, board_roi):
 
     cropped = frame[y1:y2, x1:x2].copy()
 
-    results = reader.readtext(
+    # グレースケール化
+    gray = cv2.cvtColor(
         cropped,
-        detail=0,
+        cv2.COLOR_BGR2GRAY
+    )
+
+    # コントラスト改善
+    clahe = cv2.createCLAHE(
+        clipLimit=2.0,
+        tileGridSize=(8, 8)
+    )
+
+    enhanced = clahe.apply(gray)
+
+    # OCRを実行
+    results = reader.readtext(
+        enhanced,
+        detail=1,
         paragraph=False
     )
 
-    return " ".join(results)
+    nearest_text = ""
+    nearest_distance = float("inf")
+
+    for bbox, text, confidence in results:
+
+        # 信頼度の低い結果は除外
+        if confidence < 0.3:
+            continue
+
+        # 文字領域の中心
+        center_x = sum(p[0] for p in bbox) / 4 + x1
+        center_y = sum(p[1] for p in bbox) / 4 + y1
+
+        # 指先との距離
+        distance = math.hypot(
+            center_x - px,
+            center_y - py
+        )
+
+        if distance < nearest_distance:
+            nearest_distance = distance
+            nearest_text = text
+
+    return nearest_text
+
 
 
 # =========================
