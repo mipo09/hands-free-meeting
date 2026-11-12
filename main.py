@@ -4,13 +4,38 @@ import numpy as np
 import whisper
 import os
 import ollama
-
 import json
 import threading
 import time
+import ctypes
 
 from pathlib import Path
+from datetime import datetime
 from camera_processor import main as camera_main
+from audio_processor import list_microphones
+
+# =========================
+# マイク選択
+# =========================
+
+def select_microphone():
+    available = list_microphones()
+
+    if not available:
+        raise RuntimeError("使用可能なマイクが見つかりません。")
+
+    while True:
+        try:
+            selected = int(input("使用するマイクの番号を入力してください: "))
+
+            if selected in available:
+                print(f"マイク番号 {selected} を使用します。")
+                return selected
+
+            print("一覧にある番号を入力してください。")
+
+        except ValueError:
+            print("数字を入力してください。")
 
 
 samplerate = 16000
@@ -87,32 +112,26 @@ input()
 
 print("録音・カメラ処理を開始します。")
 
-# カメラと録音の終了状態を共有
-stop_event = threading.Event()
+# マイク選択
+device_id = select_microphone()
 
-# 会議フォルダのパス
+stop_event = threading.Event()
 meeting_path = Path(meeting_dir).resolve()
 
 prevent_sleep()
 
 try:
     with sd.InputStream(
-        device=1,
+        device=device_id,
         samplerate=samplerate,
         channels=channels,
         callback=callback
     ):
-        # 録音開始時刻
         start_time = time.monotonic()
-
-        # カメラ処理を開始
-        camera_main(
-            stop_event,
-            meeting_path,
-            start_time
-        )
+        camera_main(stop_event, meeting_path, start_time)
 
 finally:
+    stop_event.set()
     allow_sleep()
 
 
