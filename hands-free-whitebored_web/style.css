@@ -1,0 +1,611 @@
+
+/* =========================
+   基本設定
+========================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: "Yu Gothic", "Meiryo", sans-serif;
+    background: #f6f5f1;
+    color: #343631;
+}
+
+button,
+input,
+textarea {
+    font: inherit;
+}
+
+button {
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.10);
+}
+
+.screen {
+    min-height: 100vh;
+}
+
+.hidden {
+    display: none !important;
+}
+
+
+/* =========================
+   共通ヘッダー
+========================= */
+
+.app-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 22px 32px;
+    background: white;
+    border-bottom: 1px solid #e7e5dd;
+}
+
+.logo {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 42px;
+    height: 42px;
+    background: #dce7d9;
+    color: #4f6850;
+    border-radius: 12px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.app-header span {
+    font-size: 15px;
+    font-weight: bold;
+}
+
+
+/* =========================
+   ホーム画面
+========================= */
+
+.home-screen {
+    display: flex;
+    flex-direction: column;
+}
+
+.home-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 40px 24px;
+}
+
+.home-content h1 {
+    font-size: 36px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+}
+
+.description {
+    color: #77776f;
+    font-size: 16px;
+    line-height: 1.8;
+}
+
+.home-content h2 {
+    font-size: 18px;
+    margin: 32px 0 20px;
+}
+
+.mode-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    width: 100%;
+    max-width: 750px;
+}
+
+.mode-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 330px;
+    min-height: 190px;
+    padding: 24px;
+    border-radius: 16px;
+    background: white;
+    color: #343631;
+    text-align: left;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+}
+
+.mode-icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+}
+
+.mode-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.mode-description {
+    font-size: 13px;
+    color: #77776f;
+    line-height: 1.6;
+}
+
+.mode-arrow {
+    position: absolute;
+    right: 24px;
+    bottom: 20px;
+    font-size: 22px;
+    color: #7c947b;
+}
+
+.notice {
+    margin-top: 28px;
+    color: #85857d;
+    font-size: 13px;
+}
+
+.app-footer {
+    padding: 20px;
+    text-align: center;
+    font-size: 12px;
+    color: #85857d;
+}
+
+
+/* =========================
+   共通の入力・確認画面
+========================= */
+
+.form-container,
+.confirm-container {
+    width: 90%;
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 32px;
+    background: white;
+    border: 1px solid #e9e7df;
+    border-radius: 18px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+}
+
+.back-button {
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: #f0eee7;
+    color: #343631;
+    margin-bottom: 24px;
+}
+
+.eyebrow {
+    color: #829580;
+    font-size: 12px;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+.form-container h1,
+.confirm-container h1 {
+    font-size: 28px;
+    margin: 12px 0;
+}
+
+.form-container .description {
+    margin-bottom: 28px;
+}
+
+.form-container label {
+    display: block;
+    font-weight: bold;
+    font-size: 14px;
+    margin: 20px 0 8px;
+}
+
+.form-container input,
+.form-container textarea {
+    width: 100%;
+    border: 1px solid #deded5;
+    border-radius: 10px;
+    padding: 14px;
+    background: #fff;
+    color: #343631;
+}
+
+.form-container input:focus,
+.form-container textarea:focus {
+    outline: 2px solid #c9d8c7;
+    border-color: transparent;
+}
+
+.form-container textarea {
+    min-height: 150px;
+    resize: vertical;
+    line-height: 1.8;
+}
+
+
+/* =========================
+   共通ボタン
+========================= */
+
+.primary-button {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    margin-top: 28px;
+    border-radius: 12px;
+    background: #dce7d9;
+    color: #343631;
+    font-weight: bold;
+}
+
+.secondary-button {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin-top: 12px;
+    border-radius: 12px;
+    background: #f0eee7;
+    color: #343631;
+    font-weight: bold;
+}
+
+#previewTranscriptButton {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    margin-top: 12px;
+    border-radius: 12px;
+    background: #f0eee7;
+    color: #343631;
+}
+
+
+/* =========================
+   記録開始前の確認画面
+========================= */
+
+.session-card {
+    padding: 24px;
+    margin-top: 24px;
+    background: #f8f7f3;
+    border-radius: 14px;
+}
+
+.session-label {
+    margin: 18px 0 8px;
+    font-size: 13px;
+    color: #77776f;
+    font-weight: bold;
+}
+
+.session-label:first-child {
+    margin-top: 0;
+}
+
+.session-value {
+    margin: 0;
+    font-size: 17px;
+    font-weight: bold;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+}
+
+.confirm-notice {
+    margin-top: 24px;
+    padding: 18px;
+    background: #f1f5ef;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.confirm-notice p {
+    margin-top: 0;
+}
+
+.confirm-notice ul {
+    padding-left: 24px;
+}
+
+
+/* =========================
+   記録中画面
+========================= */
+
+.recording-container {
+    max-width: 1100px;
+    width: 92%;
+    margin: 32px auto;
+}
+
+.recording-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.recording-header h1 {
+    font-size: 28px;
+    margin: 10px 0;
+    overflow-wrap: anywhere;
+}
+
+.recording-topic {
+    color: #77776f;
+    line-height: 1.8;
+    overflow-wrap: anywhere;
+}
+
+.recording-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    background: #f9e9e6;
+    color: #a34e42;
+    border-radius: 30px;
+    font-weight: bold;
+}
+
+.recording-dot {
+    width: 10px;
+    height: 10px;
+    background: #d65b4d;
+    border-radius: 50%;
+    animation: recordingPulse 1.5s infinite;
+}
+
+@keyframes recordingPulse {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+
+/* 経過時間 */
+
+.timer-card {
+    text-align: center;
+    padding: 28px;
+    margin: 24px 0;
+    background: white;
+    border: 1px solid #e9e7df;
+    border-radius: 18px;
+}
+
+.timer-card p {
+    margin: 0 0 12px;
+    color: #77776f;
+    font-size: 14px;
+}
+
+#recordingTimer {
+    font-size: 42px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: #4f6850;
+    font-variant-numeric: tabular-nums;
+}
+
+
+/* カメラ・音声表示 */
+
+.recording-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 1.2fr) minmax(250px, 0.8fr);
+    gap: 22px;
+}
+
+.panel {
+    background: white;
+    border: 1px solid #e9e7df;
+    border-radius: 18px;
+    padding: 24px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+}
+
+.panel h2 {
+    font-size: 20px;
+    margin-top: 0;
+    margin-bottom: 22px;
+}
+
+.camera-placeholder {
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: #f1f1ed;
+    border: 1px dashed #cecec3;
+    border-radius: 14px;
+    color: #6f7068;
+    padding: 20px;
+}
+
+.camera-placeholder span {
+    font-size: 42px;
+}
+
+.camera-placeholder p {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+.camera-placeholder small {
+    font-size: 12px;
+}
+
+.status-card {
+    background: #f8f7f3;
+    padding: 16px;
+    border-radius: 12px;
+    margin-top: 16px;
+    line-height: 1.6;
+    font-size: 14px;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    background: #c6a56b;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.recording-notice {
+    margin: 24px 0;
+    padding: 16px;
+    background: #fff8e8;
+    color: #806b3e;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.8;
+}
+
+
+/* 記録終了ボタン */
+
+.stop-button {
+    display: block;
+    width: 100%;
+    padding: 18px;
+    margin: 24px 0;
+    border-radius: 14px;
+    background: #eee5dc;
+    color: #8b5144;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+
+/* =========================
+   文字起こし結果画面
+========================= */
+
+.transcript-container {
+    width: 90%;
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 32px;
+    background: #ffffff;
+    border: 1px solid #e9e7df;
+    border-radius: 18px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.transcript-container h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 24px;
+}
+
+.transcript-text {
+    min-height: 250px;
+    padding: 20px;
+    margin: 24px 0;
+    background: #f5f7fa;
+    border-radius: 8px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+
+/* =========================
+   スマートフォン対応
+========================= */
+
+@media (max-width: 800px) {
+
+    .app-header {
+        padding: 18px;
+    }
+
+    .home-content {
+        padding: 30px 18px;
+    }
+
+    .home-content h1 {
+        font-size: 28px;
+    }
+
+    .home-content h2 {
+        font-size: 16px;
+    }
+
+    .mode-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .mode-card {
+        width: 100%;
+        max-width: 330px;
+    }
+
+    .form-container,
+    .confirm-container,
+    .transcript-container {
+        width: calc(100% - 28px);
+        padding: 22px;
+        margin: 20px auto;
+    }
+
+    .form-container h1,
+    .confirm-container h1 {
+        font-size: 24px;
+    }
+
+    .recording-container {
+        width: calc(100% - 28px);
+        margin: 20px auto;
+    }
+
+    .recording-header h1 {
+        font-size: 24px;
+    }
+
+    #recordingTimer {
+        font-size: 32px;
+    }
+
+    .recording-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .camera-placeholder {
+        min-height: 220px;
+    }
+}

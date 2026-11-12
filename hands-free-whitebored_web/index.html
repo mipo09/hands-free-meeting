@@ -1,0 +1,318 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AIハンズフリーホワイトボード</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ホーム画面 -->
+    <section id="homeScreen" class="screen home-screen">
+
+        <header class="app-header">
+            <div class="logo">AI</div>
+        </header>
+
+        <main class="home-content">
+
+            <h1>
+                記録するだけで、<br>
+                大切な内容を整理。
+            </h1>
+
+            <p class="description">
+                音声と映像をもとに、授業や会議の内容を<br>
+                自動で要約・整理するアプリです。
+            </p>
+
+            <h2>利用するモードを選択してください</h2>
+
+            <div class="mode-container">
+
+                <button id="classButton" class="mode-card">
+
+                    <span class="mode-icon">📚</span>
+
+                    <span class="mode-title">授業を記録する</span>
+
+                    <span class="mode-description">
+                        授業の要点や重要な用語を整理します。
+                    </span>
+
+                    <span class="mode-arrow">→</span>
+
+                </button>
+
+                <button id="meetingButton" class="mode-card">
+
+                    <span class="mode-icon">💼</span>
+
+                    <span class="mode-title">会議を記録する</span>
+
+                    <span class="mode-description">
+                        発言や決定事項を整理します。
+                    </span>
+
+                    <span class="mode-arrow">→</span>
+
+                </button>
+
+            </div>
+
+            <p class="notice">
+                ※ カメラ・マイクの利用には、別途設定が必要です。
+            </p>
+
+        </main>
+
+        <footer class="app-footer">
+            AIハンズフリーホワイトボード
+        </footer>
+
+    </section>
+
+
+    <!-- テーマ入力画面 -->
+    <section id="themeScreen" class="screen hidden">
+
+        <header class="app-header">
+            <div class="logo">AI</div>
+            <span>AIハンズフリーホワイトボード</span>
+        </header>
+
+        <main class="form-container">
+
+            <button id="backButton" class="back-button">
+                ← モード選択に戻る
+            </button>
+
+            <p class="eyebrow">SESSION SETTINGS</p>
+
+            <h1 id="themeHeading">テーマを設定する</h1>
+
+            <p class="description">
+                記録する内容がわかるように、テーマを入力してください。
+            </p>
+
+            <label for="themeInput">授業名・会議名</label>
+
+            <input
+                type="text"
+                id="themeInput"
+                placeholder="例：新製品開発会議"
+            >
+
+            <label for="topicInput">今回のテーマ・議題</label>
+
+            <textarea
+                id="topicInput"
+                placeholder="例：新製品の設計方針について"
+            ></textarea>
+
+            <button id="nextButton" class="primary-button">
+                次へ進む →
+            </button>
+
+            <button id="previewTranscriptButton" type="button">
+                仮の文字起こし結果を表示
+            </button>
+
+        </main>
+
+    </section>
+
+
+    <!-- 記録開始前の確認画面 -->
+    <section id="confirmScreen" class="screen hidden">
+
+        <header class="app-header">
+            <div class="logo">AI</div>
+            <span>AIハンズフリーホワイトボード</span>
+        </header>
+
+        <main class="confirm-container">
+
+            <button id="backToThemeButton" class="back-button">
+                ← テーマ入力に戻る
+            </button>
+
+            <p class="eyebrow">SESSION CONFIRMATION</p>
+
+            <h1>記録内容を確認する</h1>
+
+            <p class="description">
+                以下の内容で記録を開始します。
+            </p>
+
+            <div class="session-card">
+
+                <p class="session-label">利用モード</p>
+                <p id="confirmMode" class="session-value"></p>
+
+                <p class="session-label">授業名・会議名</p>
+                <p id="confirmTitle" class="session-value"></p>
+
+                <p class="session-label">今回のテーマ・議題</p>
+                <p id="confirmTopic" class="session-value"></p>
+
+            </div>
+
+            <div class="confirm-notice">
+                <p>記録開始後は、カメラ・マイクを使用して記録を行います。</p>
+                <ul>
+                    <li>記録中は経過時間が表示されます。</li>
+                    <li>記録終了後、文字起こし結果を確認できます。</li>
+                </ul>
+            </div>
+
+            <button id="startRecordingButton" class="primary-button">
+                記録を開始する →
+            </button>
+
+        </main>
+
+    </section>
+
+
+    <!-- 記録中画面 -->
+    <section id="recordingScreen" class="screen hidden">
+
+        <header class="app-header">
+            <div class="logo">AI</div>
+            <span>AIハンズフリーホワイトボード</span>
+        </header>
+
+        <main class="recording-container">
+
+            <div class="recording-header">
+
+                <div>
+                    <p class="eyebrow">RECORDING SESSION</p>
+
+                    <h1 id="recordingTitle">記録中</h1>
+
+                    <p id="recordingTopic" class="recording-topic"></p>
+                </div>
+
+                <div class="recording-status">
+                    <span class="recording-dot"></span>
+                    <span id="recordingStatus">記録中</span>
+                </div>
+
+            </div>
+
+            <!-- 経過時間 -->
+            <div class="timer-card">
+
+                <p>記録経過時間</p>
+
+                <div id="recordingTimer">00:00:00</div>
+
+            </div>
+
+            <!-- カメラ・音声表示 -->
+            <div class="recording-layout">
+
+                <div class="panel">
+
+                    <h2>カメラ映像</h2>
+
+                    <div class="camera-placeholder">
+
+                        <span>📷</span>
+
+                        <p>カメラ映像表示エリア</p>
+
+                        <small>
+                            Pythonとの接続後、映像が表示されます。
+                        </small>
+
+                    </div>
+
+                </div>
+
+                <div class="panel">
+
+                    <h2>音声・文字起こし</h2>
+
+                    <div class="status-card">
+
+                        <span class="status-dot"></span>
+                        マイク接続待機中
+
+                    </div>
+
+                    <div class="status-card">
+
+                        <span class="status-dot"></span>
+                        文字起こし待機中
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="recording-notice">
+                現在はGUIの動作確認用です。
+                実際のカメラ・マイク・文字起こし機能は
+                Pythonとの接続後に動作します。
+            </div>
+
+            <button id="stopRecordingButton" class="stop-button">
+                ■ 記録を終了する
+            </button>
+
+        </main>
+
+    </section>
+
+
+    <!-- 文字起こし結果画面 -->
+    <section id="transcriptScreen" class="screen hidden">
+
+        <header class="app-header">
+            <div class="logo">AI</div>
+            <span>AIハンズフリーホワイトボード</span>
+        </header>
+
+        <main class="transcript-container">
+
+            <p class="eyebrow">TRANSCRIPT</p>
+
+            <h2>文字起こし結果</h2>
+
+            <p class="session-label">授業名・会議名</p>
+            <p id="transcriptTitle" class="session-value"></p>
+
+            <p class="session-label">今回のテーマ・議題</p>
+            <p id="transcriptTopic" class="session-value"></p>
+
+            <div id="transcriptText" class="transcript-text">
+                ここに文字起こし結果が表示されます。
+            </div>
+
+            <button id="backToInputButton" type="button" class="back-button">
+                ← テーマ入力に戻る
+            </button>
+
+            <button id="homeButton" type="button" class="primary-button">
+                ホーム画面に戻る
+            </button>
+
+        </main>
+
+    </section>
+
+
+    <script src="script.js"></script>
+
+</body>
+</html>
