@@ -6,3 +6,4 @@ ollama
 opencv-python
 mediapipe
 easyocr
+flask
